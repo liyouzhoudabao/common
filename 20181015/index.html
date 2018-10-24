@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>时间范围选择到时</title>
+    <link rel="stylesheet" type="text/css" href="../js/elementUI/theme-default/index.css">
+    <style type="text/css">
+        html,
+        body {
+            margin: 0px;
+            padding: 0px;
+        }
+
+        #app {
+            padding: 20px;
+        }
+
+        .el-form-item__label {
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <el-row :gutter="20">
+            <el-col :span="13" :offset="5">
+                <el-form :model="approveform" :rules="rules" ref="approveform" label-width="110px">
+                    <el-row :gutter="10">
+                        <el-col :span="12">
+                            <el-form-item label="开始时间:" prop="approve_start_date">
+                                <el-col :span="14">
+                                    <el-date-picker type="date" placeholder="评审开始日期.." v-model="approveform.approve_start_date"
+                                        :picker-options="pickerStartCommon(approveform.approve_end_date)" 
+                                        @change="_startDateChange(approveform.approve_start_date,'approveform','approve_start_time')"
+                                        format="yyyy-MM-dd" :editable="false" :clearable="true" style="width: 100%;"></el-date-picker>
+                                </el-col>
+                                <el-col class="line" :span="2">-</el-col>
+                                <el-col :span="8">
+                                    <el-select :disabled="!approveform.approve_start_date" v-model="approveform.approve_start_time"
+                                        ref="approve_start_time" placeholder="时间.." style="width: 100%;">
+                                        <el-option v-show="_isShowTime(item,'approveform','approve_end_date','approve_start_date','approve_end_time')"
+                                            v-for="(item,index) in 23" :key="index" :label="item+'点'" :value="item"></el-option>
+                                    </el-select>
+                                </el-col>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="结束时间:" prop="approve_end_date">
+                                <el-col :span="14">
+                                    <el-date-picker type="date" placeholder="评审结束日期.." v-model="approveform.approve_end_date"
+                                        :picker-options="pickerEndCommon(approveform.approve_start_date)" 
+                                        @change="_endDateChange(approveform.approve_end_date,'approveform','approve_end_time')"
+                                        format="yyyy-MM-dd" :editable="false" :clearable="true" style="width: 100%;"></el-date-picker>
+                                </el-col>
+                                <el-col class="line" :span="2">-</el-col>
+                                <el-col :span="8">
+                                    <el-select :disabled="!approveform.approve_end_date" v-model="approveform.approve_end_time"
+                                        ref="approve_end_time" placeholder="时间.." style="width: 100%;">
+                                        <el-option v-show="_isShowTime(item,'approveform','approve_start_date','approve_end_date','approve_start_time',true)"
+                                            v-for="(item,index) in 23" :key="index" :label="item+'点'" :value="item"></el-option>
+                                    </el-select>
+                                </el-col>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+
+                </el-form>
+            </el-col>
+        </el-row>
+    </div>
+</body>
+<script type="text/javascript" src="../js/vue.min.js"></script>
+<script type="text/javascript" src="../js/elementUI/index.js"></script>
+<script type="text/javascript" src="../js/moment/moment-with-locales.min.js"></script>
+<script type="text/javascript">
+    var Main = {
+        el: '#app',
+        data: function () {
+            var _this=this;
+            var validateStartDate = function (rule, value, callback) {
+                if (!value || !_this.approveform.approve_start_time) {
+                    callback(new Error('请选择评审开始时间..'));
+                } else {
+                    callback();
+                }
+            };
+            var validateEndDate = function (rule, value, callback) {
+                if (!value || !_this.approveform.approve_end_time) {
+                    callback(new Error('请选择评审结束时间..'));
+                } else {
+                    callback();
+                }
+            };
+            return {
+                approveform: {
+                    approve_start_date: '',
+                    approve_start_time: '',
+                    approve_end_date: '',
+                    approve_end_time: ''
+                },
+                pickerStartCommon: function (endDate) { //评审开始日期限制
+                    return {
+                        disabledDate: function (time) {
+                            return time.getTime() > Date.now() || time.getTime() > new Date(endDate).getTime();
+                        }
+                    }
+                },
+                pickerEndCommon: function (startDate) { //评审结束日期限制
+                    return {
+                        disabledDate: function (time) {
+                            return time.getTime() > Date.now() || time.getTime() < new Date(startDate).getTime();
+                        }
+                    }
+                },
+                rules: {
+                    approve_start_date: [{type: 'date',required: true,validator: validateStartDate,trigger: 'change'}],
+                    approve_end_date: [{type: 'date',required: true,validator: validateEndDate,trigger: 'change'}]
+                }
+            }
+        },
+        methods: {
+            _isShowTime: function (item, formName, key1, key2, key3, flag) { //评审时间点的显示
+                var result = true;
+                if (this[formName][key1]) {
+                    var dateEqule = moment(this[formName][key1]).format('YYYY-MM-DD') == moment(this[formName][key2]).format('YYYY-MM-DD');
+                    if (dateEqule) {
+                        if (flag) {
+                            if (item <= this[formName][key3]) {
+                                result = false;
+                            }
+                        } else {
+                            var keyNum = (this[formName][key3] || 0);
+                            if (keyNum && item >= keyNum) {
+                                result = false;
+                            }
+                        }
+                    }
+                }
+                return result;
+            },
+            _startDateChange: function (val,formName,timeKey) { //评审开始日期Change
+                var _this = this;
+                if (val) {
+                    this.$nextTick(function () {
+                        _this.$refs[timeKey].toggleMenu();
+                    })
+                } else {
+                    this[formName][timeKey] = '';
+                }
+            },
+            _endDateChange: function (val,formName,timeKey) { //评审结束日期Change
+                var _this = this;
+                if (val) {
+                    this.$nextTick(function () {
+                        _this.$refs[timeKey].toggleMenu();
+                    })
+                } else {
+                    this[formName][timeKey] = '';
+                }
+            }
+        },
+        created: function () {
+            var _this = this;
+        }
+    };
+    var app = new Vue(Main);
+</script>
+
+</html>
